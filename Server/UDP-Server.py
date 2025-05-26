@@ -21,24 +21,24 @@ def client_handler (client_address, file_name, server_socket):
     response = f"OK {file_name} SIZE {filesize} PORT {transfer_port}"
     server_socket.sendto(response.encode(), client_address)
 
-    # Start sending file in chunks
-    def main (server_port):
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        server_socket.bind(('', server_port))
-        print(f"server listening on port {server_port}")
+# Start sending file in chunks
+def main (server_port):
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_socket.bind(('', server_port))
+    print(f"server listening on port {server_port}")
 
-        while True:
+    while True:
             message, client_addres = server_socket.recvfrom(1024)
             decoded_msg = message.decode()
             if decoded_msg.startswith("DOWNLOAD"):
                 _, filename = decoded_msg.split()
                 threading.Thread(target=client_handler, args=(client_address, file_name,server_socket)).start()
 
-                if __name__=="__main__":
-                    import sys
-                    if len(sys.argv) !=2:
-                        print ("usage:python UDPserver.py<port>")
-                    else:
-                        main(int(sys.argv[1]))
+if __name__=="__main__":
+    import sys
+    if len(sys.argv) !=2:
+          print ("usage:python UDPserver.py<port>")
+    else:
+        main(int(sys.argv[1]))
 
 

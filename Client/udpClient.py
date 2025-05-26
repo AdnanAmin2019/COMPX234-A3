@@ -1,10 +1,11 @@
 import socket
-
+import base64
 
 #function to reliably send and recieve messages 
 def send_and_recieve(sock, message, server_address):
-    sock.sttimeout(5)
-    retries =5#initial timeout in seconds 
+    
+    retries =5 #number of retries 
+    timeout =3 #initial timeout in seconds 
     
 
 
@@ -16,43 +17,43 @@ def send_and_recieve(sock, message, server_address):
         except socket.timeout:
             print("Timeout, retrying...")
             retries -=1
-            return None  #failed after retries 
-        def download_file(server_hostname, server_port,file_name):
+            timeout +=2
+    return None
+def download_file(server_hostname, server_port,file_name):
+     #create UPD socket
+    server_address = (server_hostname,server_port)
+    client_socket = socket.socker(socket.AF_INET,socket.SOCK_DGRAM)
 
-            #create UPD socket
-            server_address = (server_hostname,server_port)
-            client_socket = socket.socker(socket.AF_INET,socket.SOCK_DGRAM)
+    #send initial download request 
+    response = send_and_recieve(client_socket, f"DOWNLOAD {filename}") 
 
-            #send initial download request 
-            response = send_and_recieve(client_socket, f"DOWNLOAD {filename}") 
-
-            if not response:
-                print(f"server not responding, failed to download {filename}")
-                return
+    if not response:
+        print(f"server not responding, failed to download {filename}")
+        return
+    
+    if response.startswith("ERR"):
+        print(f"server responded:{response}")
+        return
             
-            if response.startswith("ERR"):
-                print(f"server responded:{response}")
-                return
-            
-            #Extract file details from server's ok response 
-            _,_,_,filesize, _, transfer_port = response.split()
-            filesize = int(filesize)
-            transfer_port = int(transfer_port)
-            print (f"File '{filename}' of size {filesize} bytes will be downloaded from port {transfer_port}")
+    #Extract file details from server's ok response 
+    _,_,_,filesize, _, transfer_port = response.split()
+    filesize = int(filesize)
+    transfer_port = int(transfer_port)
+    print (f"File '{file_name}' of size {filesize} bytes will be downloaded from port {transfer_port}")
 
-            #connects to the new transfer port
-            transfer_address = (server_hostname, transfer_port)
-            bytes_recieved =0
-            chunk_size = 1000 #bytes
-            local_fiename = f"downloaded_{file_name}"
+    #connects to the new transfer port
+    transfer_address = (server_hostname, transfer_port)
+    bytes_recieved =0
+    chunk_size = 1000 #bytes
+    local_fiename = f"downloaded_{file_name}"
 
-            with open(local_filename, "wb") as file:
-                while bytes_received < filesize:
-                  start = bytes_recived
-                  end = min(bytes_received + chunk_size - 1, filesize - 1)
+    with open(local_fiename, "wb") as file:
+        while bytes_received < filesize:
+            start = bytes_recieved
+            end = min(bytes_received + chunk_size - 1, filesize - 1)
 
             chunk_request = f"FILE {file_name} GET START {start} END {end}"
-            chunk_response = send_and_receive(client_socket, chunk_request, transfer_address)
+            chunk_response = send_and_recieve(client_socket, chunk_request, transfer_address)
 
             if not chunk_response:
                 print("Failed to receive chunk. Aborting.")
@@ -68,15 +69,15 @@ def send_and_recieve(sock, message, server_address):
             bytes_received += len(data_bytes)
             print(f"Received bytes {start}-{end} (Total received: {bytes_received}/{filesize})")
 
-        # After file fully received, send CLOSE message
-        close_response = send_and_receive(client_socket, f"FILE {filename} CLOSE", transfer_address)
+          # After file fully received, send CLOSE message
+        close_response = send_and_recieve(client_socket, f"FILE{file_name} CLOSE", transfer_address)
         if close_response and close_response.endswith("CLOSE_OK"):
             print(f"Successfully downloaded '{filename}'")
         else:
             print("Error closing the file transfer.")
 
-
     client_socket.close()
+
 def main(hostname, port, file_list):
     with open(file_list, "r") as file:
         filenames = file.read().splitlines()
