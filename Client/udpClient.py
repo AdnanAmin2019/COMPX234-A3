@@ -1,8 +1,13 @@
 import socket
 
+
+#function to reliably send and recieve messages 
 def send_and_recieve(sock, message, server_address):
-    sock.sttimeout(5)#set timeout of 5 seconds
-    retries =5
+    sock.sttimeout(5)
+    retries =5#initial timeout in seconds 
+    
+
+
     while retries>0:
         try:
             sock.sendto(message.encode(),server_address)
@@ -11,23 +16,79 @@ def send_and_recieve(sock, message, server_address):
         except socket.timeout:
             print("Timeout, retrying...")
             retries -=1
-            return None
-        def main(hostname, posrt,file_list):
-            server_address = (hostname,port)
+            return None  #failed after retries 
+        def download_file(server_hostname, server_port,file_name):
+
+            #create UPD socket
+            server_address = (server_hostname,server_port)
             client_socket = socket.socker(socket.AF_INET,socket.SOCK_DGRAM)
 
-            for file_name in files_to_download:
-                request = f"DOWNLOAD{file_name}"
-                response=send_an_recieve(client_socket,request,server_address)
+            #send initial download request 
+            response = send_and_recieve(client_socket, f"DOWNLOAD {filename}") 
 
-                if response and response.startwith("ok"):
-                    print(f"recieved:{response}")
-                     # Next steps: handle file chunk downloading here
+            if not response:
+                print(f"server not responding, failed to download {filename}")
+                return
+            
+            if response.startswith("ERR"):
+                print(f"server responded:{response}")
+                return
+            
+            #Extract file details from server's ok response 
+            _,_,_,filesize, _, transfer_port = response.split()
+            filesize = int(filesize)
+            transfer_port = int(transfer_port)
+            print (f"File '{filename}' of size {filesize} bytes will be downloaded from port {transfer_port}")
+
+            #connects to the new transfer port
+            transfer_address = (server_hostname, transfer_port)
+            bytes_recieved =0
+            chunk_size = 1000 #bytes
+            local_fiename = f"downloaded_{file_name}"
+
+            with open(local_filename, "wb") as file:
+                while bytes_received < filesize:
+                  start = bytes_recived
+                  end = min(bytes_received + chunk_size - 1, filesize - 1)
+
+            chunk_request = f"FILE {file_name} GET START {start} END {end}"
+            chunk_response = send_and_receive(client_socket, chunk_request, transfer_address)
+
+            if not chunk_response:
+                print("Failed to receive chunk. Aborting.")
+                return
+
+            parts = chunk_response.split(" DATA ")
+            header, encoded_data = parts[0], parts[1]
+
+            # Decode Base64 data and write to file
+            data_bytes = base64.b64decode(encoded_data)
+            file.write(data_bytes)
+
+            bytes_received += len(data_bytes)
+            print(f"Received bytes {start}-{end} (Total received: {bytes_received}/{filesize})")
+
+        # After file fully received, send CLOSE message
+        close_response = send_and_receive(client_socket, f"FILE {filename} CLOSE", transfer_address)
+        if close_response and close_response.endswith("CLOSE_OK"):
+            print(f"Successfully downloaded '{filename}'")
+        else:
+            print("Error closing the file transfer.")
+
+
+    client_socket.close()
+def main(hostname, port, file_list):
+    with open(file_list, "r") as file:
+        filenames = file.read().splitlines()
+
+    for filename in filenames:
+        print(f"Starting download: {filename}")
+        download_file(hostname, port, filename)
+        print("\n")
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) != 4:
+        print("Usage: python UDPclient.py <hostname> <port> <file_list>")
     else:
-        print(f"error or no response:{response}")
-        if __name__=="__main__":
-            import sys
-            if len(sys.argv) !=4:
-                print("usafe:python UDPclient.py <hostname> <port> <file_list>")
-            else:
-                main(sys.argv[1],int(sys.argv[2]), sys.argv[3])
+        main(sys.argv[1], int(sys.argv[2]), sys.argv[3])
