@@ -86,10 +86,10 @@ def main(hostname, port, file_list):
         print(f"Starting download: {filename}")
         download_file(hostname, port, filename)
         print("\n")
-
+        
 if __name__ == "__main__":
     import sys
     if len(sys.argv) != 4:
-        print("Usage: python UDPclient.py <hostname> <port> <file_list>")
+        print("Usage: python udpClient.py <hostname> <port> <file_list>")
     else:
         main(sys.argv[1], int(sys.argv[2]), sys.argv[3])
