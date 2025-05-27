@@ -4,8 +4,8 @@ import base64
 #function to reliably send and recieve messages 
 def send_and_recieve(sock, message, server_address):
     
-    retries =5 #number of retries 
-    timeout =3 #initial timeout in seconds 
+    retries =5   #initial timeout in seconds 
+    timeout =3   #number of retries
     
 
 
@@ -20,15 +20,15 @@ def send_and_recieve(sock, message, server_address):
             timeout +=2
     return None
 def download_file(server_hostname, server_port,file_name):
-     #create UPD socket
+     #creates UPD socket
     server_address = (server_hostname,server_port)
     client_socket = socket.socker(socket.AF_INET,socket.SOCK_DGRAM)
 
     #send initial download request 
-    response = send_and_recieve(client_socket, f"DOWNLOAD {filename}") 
+    response = send_and_recieve(client_socket, f"DOWNLOAD {file_name}") 
 
     if not response:
-        print(f"server not responding, failed to download {filename}")
+        print(f"server not responding, failed to download {file_name}")
         return
     
     if response.startswith("ERR"):
@@ -45,9 +45,9 @@ def download_file(server_hostname, server_port,file_name):
     transfer_address = (server_hostname, transfer_port)
     bytes_recieved =0
     chunk_size = 1000 #bytes
-    local_fiename = f"downloaded_{file_name}"
+    local_filename = f"downloaded_{file_name}"
 
-    with open(local_fiename, "wb") as file:
+    with open(local_filename, "wb") as file:
         while bytes_received < filesize:
             start = bytes_recieved
             end = min(bytes_received + chunk_size - 1, filesize - 1)
@@ -72,7 +72,7 @@ def download_file(server_hostname, server_port,file_name):
           # After file fully received, send CLOSE message
         close_response = send_and_recieve(client_socket, f"FILE{file_name} CLOSE", transfer_address)
         if close_response and close_response.endswith("CLOSE_OK"):
-            print(f"Successfully downloaded '{filename}'")
+            print(f"Successfully downloaded '{file_name}'")
         else:
             print("Error closing the file transfer.")
 
@@ -82,9 +82,9 @@ def main(hostname, port, file_list):
     with open(file_list, "r") as file:
         filenames = file.read().splitlines()
 
-    for filename in filenames:
-        print(f"Starting download: {filename}")
-        download_file(hostname, port, filename)
+    for file_name in filenames:
+        print(f"Starting download: {file_name}")
+        download_file(hostname, port, file_name)
         print("\n")
         
 if __name__ == "__main__":
