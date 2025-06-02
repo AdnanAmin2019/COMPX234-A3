@@ -1,3 +1,5 @@
+print("DEBUG: udpClient.py started!")
+
 import socket
 import base64
 
@@ -35,13 +37,13 @@ def download_file(server_hostname, server_port,file_name):
         print(f"server responded:{response}")
         return
             
-    #Extract file details from server's ok response 
+    #Extracting file details from server's ok response 
     _,_,_,filesize, _, transfer_port = response.split()
     filesize = int(filesize)
     transfer_port = int(transfer_port)
     print (f"File '{file_name}' of size {filesize} bytes will be downloaded from port {transfer_port}")
 
-    #connects to the new transfer port
+    #connecting to the new transfer port
     transfer_address = (server_hostname, transfer_port)
     bytes_recieved =0
     chunk_size = 1000 #bytes
@@ -88,8 +90,9 @@ def main(hostname, port, file_list):
         print("\n")
         
 if __name__ == "__main__":
+    print("DEBUG: Script is running as main")
     import sys
     if len(sys.argv) != 4:
         print("Usage: python udpClient.py <hostname> <port> <file_list>")
     else:
-        main(sys.argv[1], int(sys.argv[2]), sys.argv[3])
+        main(sys.argv[1], sys.argv[2], sys.argv[3])
